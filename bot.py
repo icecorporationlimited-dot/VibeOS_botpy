@@ -1,10 +1,37 @@
+import os
+
+import pymongo
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters
 from telegram.request import HTTPXRequest
-import pymongo
 
-client = pymongo.MongoClient("mongodb://vibeossupport_db_user:T5MgK81nVoZk50bc@ac-kryc93r-shard-00-00.ibuc0rv.mongodb.net:27017,ac-kryc93r-shard-00-01.ibuc0rv.mongodb.net:27017,ac-kryc93r-shard-00-02.ibuc0rv.mongodb.net:27017/?ssl=true&replicaSet=atlas-fmry30-shard-0&authSource=admin&appName=Cluster0")
+
+# =========================
+# Environment Variables
+# =========================
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+MONGO_URL = os.getenv("MONGO_URL")
+
+if not BOT_TOKEN:
+    raise RuntimeError("BOT_TOKEN is missing")
+
+if not MONGO_URL:
+    raise RuntimeError("MONGO_URL is missing")
+
+
+# =========================
+# MongoDB
+# =========================
+
+client = pymongo.MongoClient(MONGO_URL)
+
 db = client["vibeOS"]
+
+
+# =========================
+# Telegram Handler
+# =========================
 
 async def photo_handler(update: Update, context):
     photo = update.message.photo[-1].file_id
@@ -24,6 +51,10 @@ async def photo_handler(update: Update, context):
     )
 
 
+# =========================
+# Telegram Request
+# =========================
+
 request = HTTPXRequest(
     connect_timeout=30,
     read_timeout=60,
@@ -31,9 +62,14 @@ request = HTTPXRequest(
     pool_timeout=30
 )
 
+
+# =========================
+# Bot
+# =========================
+
 app = (
     ApplicationBuilder()
-    .token("8795425415:AAHOnBoDrUc_IaA3UuGsAlRvcOuUBwTIfhY")
+    .token(BOT_TOKEN)
     .request(request)
     .build()
 )
@@ -42,5 +78,7 @@ app.add_handler(
     MessageHandler(filters.PHOTO, photo_handler)
 )
 
+
 print("Bot starting...")
+
 app.run_polling()
